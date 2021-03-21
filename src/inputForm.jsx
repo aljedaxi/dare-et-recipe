@@ -27,26 +27,9 @@ const intOrZero = orZero (parseInt (10))
 const floatOrZero = orZero (parseFloat)
 const succ = add (1)
 
-// type Component = React.ComponentType<FieldRenderProps<any, HTMLElement>>;
-// type Fuck = {label: string; component?: Component};
-// type Event = {
-// 	start: number;
-// 	end: number;
-// 	rangeEnd?: number;
-// 	type: EventType;
-// 	quantity?: number;
-// 	description?: string;
-// };
-	// multimedia
-	// equipment needed
-	// filter type
-	// coffee variety
-	// ideal water temperature
-	// amount of water
-	// grams of coffee
-	// grind size
-	// overall duration of recipe
-	// list of steps
+// multimedia
+// coffee variety /TODO
+// grind size
 const timeInput = {component: 'input', step: 1, min: 0, type: 'number'}
 const gramsInput = {component: 'input', type: 'number', step: 0.1, min: 0}
 const eventTypes = ['note', 'bloom', 'distribute', 'invert', 'swirl', 'break crust', 'draw down', 'pour', 'stop brew', 'cap on', 'grind', 'press', 'stir'].sort()
