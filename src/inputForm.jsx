@@ -1,4 +1,4 @@
-import {useState, Fragment, createElement as ReactDotCreateElement} from 'react';
+import {useState, Fragment} from 'react';
 import * as React from 'react';
 import YAML from 'yaml'
 import { Form, Field } from 'react-final-form'
@@ -13,18 +13,22 @@ import {
 	range,
 	add,
 	fromMaybe,
+	insert,
 } from 'sanctuary'
+import {
+	createElement,
+	createOption ,
+	createNoChild,
+} from './util'
 
-
-
-//TODO event input and JSON export
-
-const kbab = s => joinWith ('-') (words (s))
 const kebab = pipe([ words, joinWith ('-') ])
+const orZero = f => pipe([f, fromMaybe (0)])
+const intOrZero = orZero (parseInt (10))
+const floatOrZero = orZero (parseFloat)
+const succ = add (1)
 
 // type Component = React.ComponentType<FieldRenderProps<any, HTMLElement>>;
 // type Fuck = {label: string; component?: Component};
-const eventTypes = ['note', 'bloom', 'distribute', 'invert', 'swirl', 'break crust', 'draw down', 'pour', 'stop brew', 'cap on', 'grind', 'press', 'stir']
 // type Event = {
 // 	start: number;
 // 	end: number;
@@ -43,18 +47,23 @@ const eventTypes = ['note', 'bloom', 'distribute', 'invert', 'swirl', 'break cru
 	// grind size
 	// overall duration of recipe
 	// list of steps
+const timeInput = {component: 'input', step: 1, min: 0, type: 'number'}
+const gramsInput = {component: 'input', type: 'number', step: 0.1, min: 0}
+const eventTypes = ['note', 'bloom', 'distribute', 'invert', 'swirl', 'break crust', 'draw down', 'pour', 'stop brew', 'cap on', 'grind', 'press', 'stir'].sort()
+const required = true
 const rawMetadata = [
-	{name: 'author.name', label: 'your name'},
-	{name: 'author.email', label: 'your email'},
-	{name: 'author.url', label: 'a link to represent you'},
+	{name: 'author.name', label: 'your name', autoComplete: 'name'},
+	{name: 'author.email', label: 'your email', type: 'email', autoComplete: 'email'},
+	{name: 'author.url', label: 'a link to represent you', autoComplete: 'url'},
 	{name: 'description', label: 'Describe your recipe', component: 'textarea'},
 ];
 const aramseData = [
-	{name: 'name', label: 'your recipe\'s name'},
-	{label: 'brewer'},
-	{name: 'coffee', label: 'coffee (grams)'},
-	{label: 'grind'},
-	{label: 'water'},
+	{name: 'name', label: 'your recipe\'s name', required, autoComplete: 'off'},
+	{label: 'brewer', required},
+	{name: 'coffee', label: 'coffee (grams)', required, ...gramsInput},
+	{label: 'grind', required},
+	{name: 'water.grams', label: 'water (g/ml)', required, ...gramsInput},
+	{name: 'water.temp', label: 'water temp (celcius)', type: 'number', required, step: 1},
 ];
 // const socialFields = [
 	// ['your recipe\'s category'],
@@ -63,40 +72,62 @@ const textFields = [...rawMetadata, ...aramseData]
 
 //TODO assume short
 // type EventInputProps = {idx: number; id: string; headerElement?: string};
-const createElement = comp => props => children => ReactDotCreateElement(comp, props, children)
-const createOption = createElement ('option')
 const createOptionWithValueName = t => createOption ({key: t, value: t}) (t)
+const LabelAndField = ({id, label, ...rest}) =>
+	<>
+		<label htmlFor={id}>{label}</label>
+		<Field {...rest} />
+	</>
+
+const eventData = [
+	{
+		label: 'start time',
+		name: 'start',
+		required,
+		...timeInput,
+	},
+	{
+		label: 'end time',
+		name: 'end',
+		...timeInput,
+	},
+	{
+		label: 'range end time', //TODO better semiotics
+		name: 'endRange',
+		...timeInput,
+	},
+	{
+		name: 'type',
+		component: 'select',
+		label: 'type',
+		required,
+		children: map (createOptionWithValueName) (eventTypes),
+	},
+	{
+		name: 'quantity',
+		label: 'end quantity',
+		...gramsInput,
+	}, 
+	{
+		name: 'description',
+		label: 'description',
+		component: 'textarea', 
+	}
+];
+
 const EventInput = ({idx, id, headerElement = 'h3', children, ...rest}) => (
 	<div>
 		{children}
 		<div {...rest}>
-			<>
-				<label htmlFor={`${id}start`}>start time</label>
-				<Field component='input' type="number" name={`${id}start`} id={`${id}start`} step={5} min={0} max={60 * 10} />
-			</>
-			<>
-				<label htmlFor={`${id}end`}>end time</label>
-				<Field component='input' type="number" name={`${id}end`} id={`${id}end`} step={5} min={0} max={60 * 10} />
-			</>
-			<>
-				<label htmlFor={`${id}type`}>type</label>
-				<Field name={`${id}type`} id={`${id}type`} component='select'>
-					{map (createOptionWithValueName) (eventTypes)}
-				</Field>
-			</>
-			<>
-				<label htmlFor={`${id}quantity`}>end quantity</label>
-				<Field component='input' type="number" name={`${id}quantity`} id={`${id}quantity`} step={0.5} />
-			</>
-			<>
-				<label htmlFor={`${id}description`}>description</label>
-				<Field component='textarea' name={`${id}description`} id={`${id}description`} />
-			</>
+			{map (pipe([
+				({name, ...rest}) => ({name: id + name, id: id + name, key: id + name, ...rest}),
+				createNoChild (LabelAndField)
+			])) (eventData)}
 		</div>
 	</div>
 );
 
-const succ = add (1)
+
 const objectEncoders = {
 	json: s => JSON.stringify(s),
 	yaml: s => YAML.stringify(s),
@@ -106,11 +137,23 @@ const fileType = {
 	yaml: 'text/x-yaml',
 }
 
-const orZero = f => pipe([f, fromMaybe (0)])
-const intOrZero = orZero (parseInt (10))
-const floatOrZero = orZero (parseFloat)
+const doFileStuff = format => recipe => {
+	const {name} = recipe
+	const fileData = objectEncoders[format] (recipe)
+	const type = fileType[format]
+	const fileName = `${name}.${format}`
+	const file = new File([fileData], fileName, {type})
+	const fileUrl = URL.createObjectURL(file)
+	const link = document.createElement('a')
+	link.download = fileName
+	link.href = fileUrl
+	link.click ()
+}
 
-export const InputForm = () => {
+export const InputForm = props => {
+	const { handleSetRecipe } = props;
+	const handleSetRecipeFormat = 'no file';
+	const outputters = insert (handleSetRecipeFormat) (handleSetRecipe) (objectEncoders)
 	const [numberOfEvents, setNEvents] = useState (1)
 	const handleAddingEvent = () => setNEvents(succ)
 	const eventRange = range (1) (succ (numberOfEvents))
@@ -119,22 +162,14 @@ export const InputForm = () => {
 		const eventize = map (({start, end, type, quantity, ...rest}) => ({
 			start: intOrZero (start),
 			end: intOrZero (end === undefined ? start : end),
-			quantity: floatOrZero (quantity),
+			quantity: floatOrZero (quantity ?? '0'),
 			type: type ?? eventTypes[0],
 			...rest,
 		}))
 		const {description, name, brewer, coffee, grind, water, format = 'json'} = values
 		const recipe = { author, events: eventize (events), description, name, brewer, coffee, grind, water }
-		console.log('recipe', recipe);
-		const fileData = objectEncoders[format] (recipe)
-		const type = fileType[format]
-		const fileName = `${name}.${format}`
-		const file = new File([fileData], fileName, {type});
-		const fileUrl = URL.createObjectURL(file)
-		const link = document.createElement('a')
-		link.download = fileName
-		link.href = fileUrl
-		link.click ()
+		const f = format === handleSetRecipeFormat ? handleSetRecipe : doFileStuff (format)
+		f (recipe)
 	};
 
 	const columnalStyle = {display: 'grid', gridTemplateColumns: '50% 50%', width: 350};
@@ -147,12 +182,12 @@ export const InputForm = () => {
 					<form onSubmit={handleSubmit}>
 						<h2>metadata</h2>
 						<div style={columnalStyle}>
-							{map (({label, component = 'input', name: propsName}) => {
+							{map (({label, component = 'input', name: propsName, ...rest}) => {
 								const name = propsName ?? kebab (label)
 								const id = name
 								return <Fragment key={id}>
 									<label htmlFor={id}>{label}</label>
-									<Field id={id} name={name} component={component}/>
+									{createElement (Field) ({id, name, component, ...rest}) ()}
 								</Fragment>
 							}) (textFields)}
 						</div>
@@ -170,7 +205,7 @@ export const InputForm = () => {
 							<Fragment>
 								<label htmlFor='format'>export format</label>
 								<Field name='format' id='format' component='select'>
-									{map (createOptionWithValueName) (keys (objectEncoders))}
+									{map (createOptionWithValueName) (keys (outputters))}
 								</Field>
 							</Fragment>
 						</div>
