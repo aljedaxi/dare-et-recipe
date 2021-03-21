@@ -54,12 +54,15 @@ const MainMenu = ({setMode, setRecipe}) => {
 				<br/>
 				or you can select one of my <label htmlFor="recipeSelect"> test recipes </label>
 				<select id="recipeSelect" name="recipeSelector" value={selected} onChange={handleSelectChange}>
-					{map (createNoChild ('option')) (selectOptions)
+					{
+					map (createNoChild ('option')) (selectOptions)
 					}
 				</select>
+				<br/>
 				or you can <label htmlFor="fileInput"> input a recipe you've created previously </label>
 				<input id='fileInput' type="file" onChange={handleFileInputChange} />
-				<br/> and view it <button name='view' onClick={handleClick}>here</button>.
+				<br/>
+				and view it <button name='view' onClick={handleClick}>here</button>.
 			</p>
 			<p>
 				this site is still very much in beta so recommendations should be sent <a href="mailto:alje@daxi.ml">here</a>
