@@ -1,6 +1,12 @@
+import { Fragment } from 'react'
 import { createNoChild, createElement } from './util'
 import { 
 	pipe, 
+	prop,
+	K,
+	filter,
+	get,
+	isJust,
 	reduce,
 	last,
 	map,
@@ -9,7 +15,6 @@ import {
 	toUpper,
 	words,
 	unwords,
-	prop
 } from 'sanctuary'
 import {
 	Timeline,
@@ -34,45 +39,58 @@ const getTimelineRightBound = pipe([
 	fromMaybe (0),
 ])
 
-const makeMarkdownText = ({type, quantity, description}) =>
+const bold = s => `**${s}**`
+const italic = s => `_${s}_`
+const id = x => x
+
+const makeMarkdownText = ({type, quantity, description, runnerUp, inRange}) =>
 	[
-		`**${titleCase (type)}**`,
+		pipe([
+			inRange ? bold : runnerUp ? italic : id,
+			titleCase,
+		]) (type),
 		quantity ? ` ${quantity}` : '',
 		description ? `\n\n${description}` : '',
 	].join('')
 		
 const showEventTiming = ({start, end, endRange, inRange, runnerUp}) =>
-	createElement (inRange ? 'b' : runnerUp ? 'em' : 'span') () (
+	// createElement (inRange ? 'b' : runnerUp ? 'em' : 'span') () (
 		[start, end, endRange].filter(x => x !== undefined).join(' => ')
-	)
+	// )
 
-const EventsView = props => pipe([
-	prop ('events'),
-	map (o => ({ key: `${o.start}${o.type}`, date: showEventTiming (o), text: makeMarkdownText (o) })),
-	map (createNoChild (TextEvent)),
-	createElement (Events) (),
-	createElement (Timeline) ({opts: {layout: 'inline-evts'}})
-]) (props)
+const EventsView = props => {
+	const {events} = props;
+	const quantities = pipe([
+		filter (pipe ([get (K (true)) ('quantity'), isJust])),
+		reduce (({acc, vals}) => x => 
+			({acc: acc + x.quantity, vals: append ([x.quantity, acc + x.quantity]) (vals)})
+		) ({acc: 0, vals: []}),
+		prop ('vals'),
+		Object.fromEntries,
+	]) (events)
+	return pipe([
+		map (({quantity, ...o}) => ({ 
+			key: `${o.start}${o.type}`, 
+			date: showEventTiming (o), 
+			text: makeMarkdownText ({quantity: quantities[quantity], ...o}) 
+		})),
+		map (createNoChild (TextEvent)),
+		createElement (Events) (),
+		createElement (Timeline) ()
+	]) (events)
+}
 
+const MetadatumView = ({k, v}) => <div>{k}: <b>{v}</b></div>
 const MetadataView = ({author, description, name, brewer, coffee, grind, water}) => (
-	<div>
-		{author ? (
-		<div>
-			Recipe: <b>{author.name}</b>
-		</div> ) : null}
-		<div>
-			Brewer: <b>{brewer}</b>
-		</div>
-		<div>
-			Coffee: <b>{coffee}g</b>
-		</div>
-		<div>
-			Grind: {grind}
-		</div>
-		<div>
-			Water: <b>{water.grams} @ {water.temp}C</b>
-		</div>
-	</div>
+	<Fragment>
+		{map (createNoChild (MetadatumView)) ([
+			{ key: 'Recipe', k: 'Recipe', v: name },
+			{ key: 'Brewer', k: 'Brewer', v: brewer },
+			{ key: 'Coffee', k: 'Coffee', v: `${coffee}g` },
+			{ key: 'Grind',  k: 'Grind',  v: grind },
+			{ key: 'Water',  k: 'Water',  v: <b>{water.grams} @ {water.temp}C</b> },
+		])}
+	</Fragment>
 );
 
 const trace = s => {console.log(s); return s;};
@@ -93,26 +111,23 @@ export const RecipeView = props => {
 	const {recipe} = props
 	const {start, pause, isRunning, seconds} = useSeconds();
 	const {vals: events} = findSelected (seconds) (recipe.events)
-	console.log('events', events);
 	return (
-		<div style={{width: '100%', display: 'flex', flexDirection: 'column'}}>
+		<div style={{width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
 			<div>
 				{createNoChild (MetadataView) (recipe)}
 			</div>
-			<div style={{alignSelf: 'end'}}>
-				<div>
-					<div>
-						{seconds}
-					</div>
-					<div>
-						<button onClick={isRunning ? pause : start}>
-							{isRunning ? 'pause' : 'start'}
-						</button>
-					</div>
-				</div>
-				<div>
-					{createNoChild (EventsView) ({events})}
-				</div>
+			<div style={{marginTop: 10}} />
+			<div>
+				{seconds}s
+			</div>
+			<div>
+				<button onClick={isRunning ? pause : start}>
+					{isRunning ? 'pause' : 'start'}
+				</button>
+			</div>
+			<div style={{marginTop: 10}} />
+			<div>
+				{createNoChild (EventsView) ({events})}
 			</div>
 		</div>
 	)

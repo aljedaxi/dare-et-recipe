@@ -176,9 +176,9 @@ export const InputForm = props => {
 								return createNoChild (LabelAndField) (textProps)
 							}) (textFields)}
 							{map (n =>
-									createNoChild (LabelAndField) ({
-										key: n, name: `equipment[${n}]`, label: 'extra equipment', component: 'input'
-									})
+								createNoChild (LabelAndField) ({
+									key: n, name: `equipment[${n}]`, label: 'extra equipment', component: 'input'
+								})
 							) (equipRange)}
 							<button type='button' onClick={handleAddEquip}>add another piece of equipment</button>
 						</div>

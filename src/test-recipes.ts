@@ -104,7 +104,7 @@ const ultimateV60: Recipe = {
 		{ start: 0, end: 10, type: 'bloom', quantity: 60, },
 		{ start: 10, type: 'swirl', },
 		{ start: 45, end: 75, type: 'pour', quantity: 240, },
-		{ start: 75, end: 105, type: 'pour', quantity: 500 - 240, },
+		{ start: 75, end: 105, type: 'pour', quantity: 500 - 240 - 60, },
 		{ start: 105, type: 'stir', description: 'Gently stir the water surface along the inner wall of the v60, to knock down grounds. Do not touch the coffee bed.' },
 		{ start: 120, type: 'swirl', },
 		{ start: 120, end: 120 + 45, endRange: (60 * 3) + 15, type: 'draw down', },
