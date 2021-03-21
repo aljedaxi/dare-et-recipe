@@ -92,7 +92,6 @@ const ultimateV60 = {
 const nameRecipe = ({author, name}) => `${author.name}'s ${name}`
 
 const testRecipes = [ultimateV60, ultimateFrenchPress, eldric];
-const nameToRecipe = Object.fromEntries(map (recipe => [nameRecipe (recipe), recipe]) (testRecipes))
 const unsafeLast = xs => xs[xs.length - 1]
 const parsers = {
 	yaml: YAML.parse,
@@ -104,6 +103,8 @@ const parseFile = fileType => fileString => parsers[fileType.toLowerCase()] (fil
 const MainMenu = ({setMode, setRecipe}) => {
 	const [selected, setSelected] = useState ()
 	const [fileRecipe, setFileRecipe] = useState ()
+	const allRecipes = fileRecipe ? prepend (fileRecipe) (testRecipes) : testRecipes
+	const nameToRecipe = Object.fromEntries(map (recipe => [recipe.name, recipe]) (allRecipes))
 	const handleClick = e => setMode(e.target.name)
 	const handleSelectChange = e => {
 		const {value} = e.target
@@ -123,7 +124,7 @@ const MainMenu = ({setMode, setRecipe}) => {
 	}
 	const selectOptions = map (
 		({author, name}) => ({value: name, children: nameRecipe ({author, name}), key: name})
-	) (fileRecipe ? prepend (fileRecipe) (testRecipes) : testRecipes)
+	) (allRecipes)
 	return (
 		<>
 			<h1>welcome 2 the coffee zone</h1>
