@@ -133,13 +133,17 @@ const doFileStuff = format => recipe => {
 	link.click ()
 }
 
+const useList = (startingN = 1) => {
+	const [n, setN] = useState (startingN)
+	return [_ => setN (succ), range (1) (succ (n))]
+}
+
 export const InputForm = props => {
 	const { handleSetRecipe } = props;
 	const handleSetRecipeFormat = 'no file';
 	const outputters = insert (handleSetRecipeFormat) (handleSetRecipe) (objectEncoders)
-	const [numberOfEvents, setNEvents] = useState (1)
-	const handleAddingEvent = () => setNEvents(succ)
-	const eventRange = range (1) (succ (numberOfEvents))
+	const [handleAddingEvent, eventRange] = useList ()
+	const [handleAddEquip, equipRange] = useList ()
 
 	const onSubmit = ({author, events = [], ...values}) => {
 		const eventize = map (({start, end, type, quantity, ...rest}) => ({
@@ -168,11 +172,15 @@ export const InputForm = props => {
 							{map (({label, component = 'input', name: propsName, ...rest}) => {
 								const name = propsName ?? kebab (label)
 								const id = name
-								return <Fragment key={id}>
-									<label htmlFor={id}>{label}</label>
-									{createElement (Field) ({id, name, component, ...rest}) ()}
-								</Fragment>
+								const textProps = {key: id, id, label, name, component, ...rest}
+								return createNoChild (LabelAndField) (textProps)
 							}) (textFields)}
+							{map (n =>
+									createNoChild (LabelAndField) ({
+										key: n, name: `equipment[${n}]`, label: 'extra equipment', component: 'input'
+									})
+							) (equipRange)}
+							<button type='button' onClick={handleAddEquip}>add another piece of equipment</button>
 						</div>
 						<h2>events</h2>
 						{map (n =>
@@ -185,12 +193,13 @@ export const InputForm = props => {
 						<button type='button' onClick={handleAddingEvent}>add event</button>
 						<h2>export options</h2>
 						<div style={columnalStyle}>
-							<Fragment>
-								<label htmlFor='format'>export format</label>
-								<Field name='format' id='format' component='select'>
-									{map (createOptionWithValueName) (keys (outputters))}
-								</Field>
-							</Fragment>
+							{createElement (LabelAndField) ({
+								name: 'format',
+								id: 'format',
+								component: 'select',
+								label: 'export format',
+								children: map (createOptionWithValueName) (eventTypes),
+							}) (map (createOptionWithValueName) (keys (outputters)))}
 						</div>
 						<button type='submit'>submit</button>
 					</form>
