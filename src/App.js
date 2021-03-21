@@ -94,6 +94,7 @@ function App() {
 			<main>
 				{createNoChild (components[mode]) ({setMode, recipe, handleSetRecipe, setRecipe})}
 			</main>
+			<hr/>
 			<footer>
 				<a href="mailto:alje@daxi.ml">contact</a>
 			</footer>
