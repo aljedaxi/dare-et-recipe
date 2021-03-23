@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
 import { createNoChild, createElement } from './util'
 import { 
 	pipe, 
@@ -29,6 +29,10 @@ import {
 	useSeconds
 } from './coffeeHooks'
 
+const transform = oOfF => oOfD =>
+	Object.fromEntries(
+		Object.entries(oOfD).map(([k, v]) => [k, k in oOfF ? oOfF[k](v) : v])
+	)
 const capitalize = s => toUpper (s[0]) + s.slice(1)
 const titleCase = pipe([words, map (capitalize), unwords])
 const formatTime = n => 
@@ -87,15 +91,27 @@ const EventsView = props => {
 }
 
 const MetadatumView = ({k, v}) => <div>{k}: <b>{v}</b></div>
-const MetadataView = ({author, description, name, brewer, coffee, grind, water}) => (
+const MetadataView = ({author, description, name, brewer, coffee, grind, water, handleChangeCoffee, handleChangeWater, waterTemp,}) => (
 	<Fragment>
 		{map (createNoChild (MetadatumView)) ([
 			{ key: 'Recipe', k: 'Recipe', v: name },
 			{ key: 'Brewer', k: 'Brewer', v: brewer },
-			{ key: 'Coffee', k: 'Coffee', v: `${coffee}g` },
 			{ key: 'Grind',  k: 'Grind',  v: grind },
-			{ key: 'Water',  k: 'Water',  v: <b>{water.grams} @ {water.temp}C</b> },
 		])}
+		<div>
+			<label htmlFor='water'>Water</label>
+			<b>
+				<input type="number" value={water} onChange={handleChangeWater}/>
+				@ 
+				{waterTemp}C
+			</b>
+		</div>
+		<div>
+			<label htmlFor='coffee'>Coffee</label>
+			<b>
+				<input type="number" value={coffee} onChange={handleChangeCoffee} />g
+			</b>
+		</div>
 	</Fragment>
 );
 
@@ -113,14 +129,51 @@ const findSelected = currentTime => reduce(({hasDoneThing, vals}) => val => {
 	}
 }) ({hasDoneThing: false, vals: []})
 
+const useMultiplier = ({water: {grams: water}, coffee}) => {
+	const [dirty, setDirty] = useState(false)
+	const [gramsCoffee, setGramsCoffee] = useState(coffee)
+	const [gramsWater, setGramsWater] = useState(water)
+	const coffeeToWater = nCoffee => water / coffee * nCoffee
+	const waterToCoffee = nWater => coffee / water * nWater
+	const waterRatio = gramsWater / water
+	return {
+		handleChangeWater: e => {
+			const {value} = e.target
+			setGramsWater(value)
+			setGramsCoffee(waterToCoffee (value))
+			if (!dirty) {
+				alert ('only change this if you know all the quantities in the recipe are water!')
+				setDirty (true)
+			}
+		},
+		handleChangeCoffee: e => {
+			const {value} = e.target
+			setGramsCoffee(value)
+			setGramsWater(coffeeToWater (value))
+			if (!dirty) {
+				alert ('only change this if you know all the quantities in the recipe are water!')
+				setDirty (true)
+			}
+		},
+		multiplyWater: n => n * waterRatio,
+		coffee: gramsCoffee,
+		water: gramsWater,
+	};
+};
+
 export const RecipeView = props => {
 	const {recipe} = props
+	const {multiplyWater, ...handlers} = useMultiplier(recipe);
 	const {start, pause, isRunning, seconds} = useSeconds();
-	const {vals: events} = findSelected (seconds) (recipe.events)
+	const events = pipe([
+		findSelected (seconds),
+		prop ('vals'),
+		map (transform({quantity: multiplyWater})),
+	]) (recipe.events)
 	return (
 		<div style={{width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
 			<div>
-				{createNoChild (MetadataView) (recipe)}
+				{createNoChild (MetadataView) ({...recipe, ...handlers, waterTemp: recipe.water.temp })}
 			</div>
 			<div style={{marginTop: 10}} />
 			<div>
