@@ -7,6 +7,7 @@ import {
 	filter,
 	get,
 	isJust,
+	joinWith,
 	reduce,
 	last,
 	map,
@@ -15,6 +16,9 @@ import {
 	toUpper,
 	words,
 	unwords,
+	Nothing,
+	Just,
+	justs,
 } from 'sanctuary'
 import {
 	Timeline,
@@ -27,6 +31,15 @@ import {
 
 const capitalize = s => toUpper (s[0]) + s.slice(1)
 const titleCase = pipe([words, map (capitalize), unwords])
+const formatTime = n => 
+	n < 60       ? `${n}s`
+: n % 60 === 0 ? `${Math.floor(n/60)}m` 
+:                `${Math.floor(n / 60)}m${n % 60}s` 
+const bold = s => `**${s}**`
+const italic = s => `_${s}_`
+const id = x => x
+const neq = y => x => x !== y
+const nothingIfUndefined = x => x === undefined ? Nothing : Just (x)
 
 // 0 => timelineRightBound , 
 // you can take that and divide that to find the width of every 5 seconds
@@ -39,24 +52,17 @@ const getTimelineRightBound = pipe([
 	fromMaybe (0),
 ])
 
-const bold = s => `**${s}**`
-const italic = s => `_${s}_`
-const id = x => x
-
 const makeMarkdownText = ({type, quantity, description, runnerUp, inRange}) =>
 	[
-		pipe([
-			inRange ? bold : runnerUp ? italic : id,
-			titleCase,
-		]) (type),
-		quantity ? ` ${quantity}` : '',
+		pipe([ inRange ? bold : runnerUp ? italic : id, titleCase, ]) (type),
+		quantity ? ` ${quantity}g` : '',
 		description ? `\n\n${description}` : '',
 	].join('')
 		
-const showEventTiming = ({start, end, endRange, inRange, runnerUp}) =>
-	// createElement (inRange ? 'b' : runnerUp ? 'em' : 'span') () (
-		[start, end, endRange].filter(x => x !== undefined).join(' => ')
-	// )
+const showEventTiming = ({start, end, endRange}) =>
+	pipe([justs, map (formatTime), joinWith (' => ')]) (
+		[start, end, endRange].map(nothingIfUndefined)
+	)
 
 const EventsView = props => {
 	const {events} = props;
@@ -72,7 +78,7 @@ const EventsView = props => {
 		map (({quantity, ...o}) => ({ 
 			key: `${o.start}${o.type}`, 
 			date: showEventTiming (o), 
-			text: makeMarkdownText ({quantity: quantities[quantity], ...o}) 
+			text: makeMarkdownText ({quantity: quantities[quantity], ...o}),
 		})),
 		map (createNoChild (TextEvent)),
 		createElement (Events) (),
@@ -118,7 +124,7 @@ export const RecipeView = props => {
 			</div>
 			<div style={{marginTop: 10}} />
 			<div>
-				{seconds}s
+				{formatTime(seconds)}
 			</div>
 			<div>
 				<button onClick={isRunning ? pause : start}>

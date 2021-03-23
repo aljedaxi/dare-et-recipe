@@ -63,6 +63,7 @@ const MainMenu = ({setMode, setRecipe}) => {
 				<input id='fileInput' type="file" onChange={handleFileInputChange} />
 				<br/>
 				and view it <button name='view' onClick={handleClick}>here</button>.
+				this viewer roughly mirrors <a href="https://aramse.coffee/recipe/">aramse's</a> recipe format.
 			</p>
 			<p>
 				this site is still very much in beta so recommendations should be sent <a href="mailto:alje@daxi.ml">here</a>
