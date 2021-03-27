@@ -140,7 +140,7 @@ const useList = (startingN = 1) => {
 
 export const InputForm = props => {
 	const { handleSetRecipe } = props;
-	const handleSetRecipeFormat = 'no file';
+	const handleSetRecipeFormat = 'don&apos;t create a file, just show me the recipe';
 	const outputters = insert (handleSetRecipeFormat) (handleSetRecipe) (objectEncoders)
 	const [handleAddingEvent, eventRange] = useList ()
 	const [handleAddEquip, equipRange] = useList ()

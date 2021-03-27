@@ -10,6 +10,7 @@ import {
 } from 'sanctuary'
 import { testRecipes } from './test-recipes'
 import YAML from 'yaml'
+import { BrowserRouter as Router, Switch, Route, Link, useHistory } from 'react-router-dom'
 const nameRecipe = ({author, name}) => `${author.name}'s ${name}`
 
 const unsafeLast = xs => xs[xs.length - 1]
@@ -55,9 +56,7 @@ const MainMenu = ({setMode, setRecipe}) => {
 			</p>
 			<h2>recipe sharing</h2>
 			<p>
-				you can input a new recipe using 
-				&nbsp;
-				<button name='input' onClick={handleClick}>this form</button>
+				you can input a new recipe using <Link to='input'>this form</Link>
 			</p>
 			<h2>recipe viewing</h2>
 			<p>
@@ -71,7 +70,7 @@ const MainMenu = ({setMode, setRecipe}) => {
 					}
 				</select>
 				<br/>
-				then click here to <label for="view">view your selected recipe</label> <button id='view' name='view' onClick={handleClick}>here</button>.
+				view your selected recipe <Link to='view'>here</Link>.
 				<br/>
 				(this viewer roughly mirrors <a href="https://aramse.coffee/recipe/">aramse's</a> recipe format.)
 			</p>
@@ -101,16 +100,26 @@ const modes = keys (components)
 
 
 function App() {
-	const [mode, setMode] = useState(modes[0])
 	const [recipe, setRecipe] = useState(testRecipes[0])
+	const history = useHistory()
 	const handleSetRecipe = r => {
-		setMode ('view')
 		setRecipe (r)
+		history.push('/view')
 	}
   return (
 		<div id='app'>
 			<main>
-				{createNoChild (components[mode]) ({setMode, recipe, handleSetRecipe, setRecipe})}
+				<Switch>
+					<Route path='/view'>
+						{createNoChild (RecipeView) ({recipe, handleSetRecipe, setRecipe})}
+					</Route>
+					<Route path='/input'>
+						{createNoChild (InputForm) ({recipe, handleSetRecipe, setRecipe})}
+					</Route>
+					<Route path='/'>
+						{createNoChild (MainMenu) ({recipe, handleSetRecipe, setRecipe})}
+					</Route>
+				</Switch>
 			</main>
 			<hr/>
 			<footer>
