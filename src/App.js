@@ -1,3 +1,4 @@
+import './App.css'
 import {useState, Fragment } from 'react'
 import {InputForm} from './inputForm'
 import {RecipeView} from './recipe-view'
@@ -48,9 +49,20 @@ const MainMenu = ({setMode, setRecipe}) => {
 		<>
 			<h1>welcome 2 the coffee zone</h1>
 			<p>
+				there&apos;re a lot of coffee recipe websites, but they don&apos;t know how to talk to one another. 
+				this website is an open source recipe sharing format, and an open source recipe viewer.
+				i hope to help create a more open and friendly specialty coffee ecosystem.
+			</p>
+			<h2>recipe sharing</h2>
+			<p>
 				you can input a new recipe using 
 				&nbsp;
 				<button name='input' onClick={handleClick}>this form</button>
+			</p>
+			<h2>recipe viewing</h2>
+			<p>
+				you can use this inputter to <label htmlFor="fileInput"> input a recipe file </label>
+				<input id='fileInput' type="file" onChange={handleFileInputChange} />
 				<br/>
 				or you can select one of my <label htmlFor="recipeSelect"> test recipes </label>
 				<select id="recipeSelect" name="recipeSelector" value={selected} onChange={handleSelectChange}>
@@ -59,18 +71,23 @@ const MainMenu = ({setMode, setRecipe}) => {
 					}
 				</select>
 				<br/>
-				or you can <label htmlFor="fileInput"> input a recipe you've created previously </label>
-				<input id='fileInput' type="file" onChange={handleFileInputChange} />
+				then click here to <label for="view">view your selected recipe</label> <button id='view' name='view' onClick={handleClick}>here</button>.
 				<br/>
-				and view it <button name='view' onClick={handleClick}>here</button>.
-				this viewer roughly mirrors <a href="https://aramse.coffee/recipe/">aramse's</a> recipe format.
+				(this viewer roughly mirrors <a href="https://aramse.coffee/recipe/">aramse's</a> recipe format.)
 			</p>
+			<h2>this site is in beta!</h2>
 			<p>
-				this site is still very much in beta so recommendations should be sent <a href="mailto:alje@daxi.ml">here</a>
+				so please send your recommendations/hate/love <a href="mailto:alje@daxi.ml">here</a>
 			</p>
-			<p>
-				thanks!
-			</p>
+			<h2>special thanks to:</h2>
+			<ul>
+				<li>
+					<a href="https://aramse.coffee/recipe">aramse</a> for their pioneering work on a visual recipe representation. i&apos;d never&apos;d thought to make this without them.
+				</li>
+				<li>
+					<a href="https://www.youtube.com/channel/UCMb0O2CdPBNi-QqPk5T3gsQ">James Hoffmann</a> &amp; <a href="https://harkencoffee.com/blogs/news/meet-our-founder-eldric-stuart">Eldic Stuart</a> for letting me host their recipes
+				</li>
+			</ul>
 		</>
 	)
 }
@@ -91,7 +108,7 @@ function App() {
 		setRecipe (r)
 	}
   return (
-		<Fragment>
+		<div id='app'>
 			<main>
 				{createNoChild (components[mode]) ({setMode, recipe, handleSetRecipe, setRecipe})}
 			</main>
@@ -99,7 +116,7 @@ function App() {
 			<footer>
 				<a href="mailto:alje@daxi.ml">contact</a>
 			</footer>
-		</Fragment>
+		</div>
   )
 }
 
