@@ -5,12 +5,13 @@ import {RecipeView} from './recipe-view'
 import { createNoChild } from './util'
 import {
 	prepend,
-	keys,
 	map,
 } from 'sanctuary'
 import { testRecipes } from './test-recipes'
 import YAML from 'yaml'
-import { BrowserRouter as Router, Switch, Route, Link, useHistory } from 'react-router-dom'
+import { 
+	Switch, Route, Link, useHistory,
+} from 'react-router-dom'
 const nameRecipe = ({author, name}) => `${author.name}'s ${name}`
 
 const unsafeLast = xs => xs[xs.length - 1]
@@ -26,7 +27,6 @@ const MainMenu = ({setMode, setRecipe}) => {
 	const [fileRecipe, setFileRecipe] = useState ()
 	const allRecipes = fileRecipe ? prepend (fileRecipe) (testRecipes) : testRecipes
 	const nameToRecipe = Object.fromEntries(map (recipe => [recipe.name, recipe]) (allRecipes))
-	const handleClick = e => setMode(e.target.name)
 	const handleSelectChange = e => {
 		const {value} = e.target
 		setSelected (value)
@@ -55,9 +55,12 @@ const MainMenu = ({setMode, setRecipe}) => {
 				i hope to help create a more open and friendly specialty coffee ecosystem.
 			</p>
 			<h2>recipe sharing</h2>
-			<p>
-				you can input a new recipe using <Link to='input'>this form</Link>
-			</p>
+			you can input a new recipe using <Link to='input'>this form</Link>.
+			<ul>
+				<li>if you want to edit the file by hand, choose <a href="https://chan.dev/posts/comprehending-yaml/">yaml</a></li>
+				<li>if you want to send someone the file and want the smallest format, choose json</li>
+				<li>if you hate files and love links, don&apos;t create a file, and copy-paste the URL you&apos;re sent to</li>
+			</ul>
 			<h2>recipe viewing</h2>
 			<p>
 				you can use this inputter to <label htmlFor="fileInput"> input a recipe file </label>
@@ -66,7 +69,7 @@ const MainMenu = ({setMode, setRecipe}) => {
 				or you can select one of my <label htmlFor="recipeSelect"> test recipes </label>
 				<select id="recipeSelect" name="recipeSelector" value={selected} onChange={handleSelectChange}>
 					{
-					map (createNoChild ('option')) (selectOptions)
+						map (createNoChild ('option')) (selectOptions)
 					}
 				</select>
 				<br/>
@@ -91,20 +94,13 @@ const MainMenu = ({setMode, setRecipe}) => {
 	)
 }
 
-const components = {
-	main: MainMenu,
-	input: InputForm,
-	view: RecipeView,
-};
-const modes = keys (components)
-
-
-function App() {
+const App = () => {
 	const [recipe, setRecipe] = useState(testRecipes[0])
+	console.log('recipe', recipe);
 	const history = useHistory()
 	const handleSetRecipe = r => {
 		setRecipe (r)
-		history.push('/view')
+		history.push(`/view?recipe=${JSON.stringify(r)}`)
 	}
   return (
 		<div id='app'>
@@ -129,4 +125,4 @@ function App() {
   )
 }
 
-export default App;
+export default App

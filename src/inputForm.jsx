@@ -140,7 +140,7 @@ const useList = (startingN = 1) => {
 
 export const InputForm = props => {
 	const { handleSetRecipe } = props;
-	const handleSetRecipeFormat = 'don&apos;t create a file, just show me the recipe';
+	const handleSetRecipeFormat = 'don\'t create a file, just show me the recipe';
 	const outputters = insert (handleSetRecipeFormat) (handleSetRecipe) (objectEncoders)
 	const [handleAddingEvent, eventRange] = useList ()
 	const [handleAddEquip, equipRange] = useList ()
@@ -185,7 +185,7 @@ export const InputForm = props => {
 						<h2>events</h2>
 						{map (n =>
 							pipe([
-								n => `Event ${n}`,
+								n => `event ${n}`,
 								createElement ('h3') (),
 								createElement (EventInput) ({idx: n, key: n, id: `events[${n - 1}]`, style: columnalStyle})
 							]) (n)

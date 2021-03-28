@@ -1,7 +1,8 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { createNoChild, createElement } from './util'
 import { 
 	pipe, 
+	chain,
 	prop,
 	K,
 	filter,
@@ -19,6 +20,7 @@ import {
 	Nothing,
 	Just,
 	justs,
+	stripPrefix,
 } from 'sanctuary'
 import {
 	Timeline,
@@ -28,6 +30,9 @@ import {
 import {
 	useSeconds
 } from './coffeeHooks'
+import {
+	useLocation,
+} from 'react-router-dom'
 
 const transform = oOfF => oOfD =>
 	Object.fromEntries(
@@ -161,8 +166,29 @@ const useMultiplier = ({water: {grams: water}, coffee}) => {
 	};
 };
 
+const mapGet = p => map => map.has(p) ? Just (map.get (p)) : Nothing
+const getRecipeFromUrl = pipe([
+	mapGet ('recipe'),
+	map (JSON.parse),
+])
+
+const useRecipe = ({recipe: propsRecipe}) => {
+	const [recipe, setRecipe] = useState (propsRecipe)
+	const location = useLocation ()
+	useEffect(() => {
+		const searchParams = new URL (document.location).searchParams;
+		console.log('searchParams', searchParams);
+		setRecipe (
+			fromMaybe (propsRecipe) (chain (getRecipeFromUrl) (
+				searchParams ? Nothing : Just (searchParams)
+			))
+		)
+	}, [location, propsRecipe]);
+	return recipe
+}
+
 export const RecipeView = props => {
-	const {recipe} = props
+	const recipe = useRecipe (props)
 	const {multiplyWater, ...handlers} = useMultiplier(recipe);
 	const {start, pause, isRunning, seconds} = useSeconds();
 	const events = pipe([
