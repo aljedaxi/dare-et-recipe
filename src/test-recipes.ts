@@ -81,7 +81,7 @@ const ultimateFrenchPress: Recipe = {
 		{ start: 0, type: 'pour', quantity: 500, },
 		{ start: 4 * 60, type: 'break crust', description: 'scoop that foam out'},
 		{ start: (4 + 5) * 60, type: 'press', description: 'press only to the surface of the liquid'},
-		{ start: (4 + 5) * 60, type: 'note', description: 'the longer you wait, the bigger the taste, but you can pour one out whenever you\'re ready.' }
+		{ start: (4 + 5) * 60, type: 'note', description: 'the longer you wait, the bigger the taste, but you can pour whenever you\'re ready.' }
 	]
 }
 

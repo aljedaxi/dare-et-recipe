@@ -2,6 +2,9 @@ import { Fragment, useState, useEffect } from 'react'
 import { createNoChild, createElement } from './util'
 import { 
 	pipe, 
+	stripPrefix,
+	splitOn,
+	find,
 	chain,
 	prop,
 	K,
@@ -20,7 +23,7 @@ import {
 	Nothing,
 	Just,
 	justs,
-	stripPrefix,
+	parseJson,
 } from 'sanctuary'
 import {
 	Timeline,
@@ -31,7 +34,7 @@ import {
 	useSeconds
 } from './coffeeHooks'
 import {
-	useLocation,
+	useHistory,
 } from 'react-router-dom'
 
 const transform = oOfF => oOfD =>
@@ -47,7 +50,6 @@ const formatTime = n =>
 const bold = s => `**${s}**`
 const italic = s => `_${s}_`
 const id = x => x
-const neq = y => x => x !== y
 const nothingIfUndefined = x => x === undefined ? Nothing : Just (x)
 
 // 0 => timelineRightBound , 
@@ -85,7 +87,7 @@ const EventsView = props => {
 	]) (events)
 	return pipe([
 		map (({quantity, ...o}) => ({ 
-			key: `${o.start}${o.type}`, 
+			key: o.description ? o.description : `${o.start}${o.type}`, 
 			date: showEventTiming (o), 
 			text: makeMarkdownText ({quantity: quantities[quantity], ...o}),
 		})),
@@ -166,25 +168,23 @@ const useMultiplier = ({water: {grams: water}, coffee}) => {
 	};
 };
 
-const mapGet = p => map => map.has(p) ? Just (map.get (p)) : Nothing
-const getRecipeFromUrl = pipe([
-	mapGet ('recipe'),
-	map (JSON.parse),
+const getRecipeFromSearch = pipe([
+	stripPrefix ('?'),
+	map (splitOn ('&')),
+	chain (find (s => s.includes ('recipe'))),
+	chain (stripPrefix ('recipe=')),
+	map (decodeURIComponent),
+	chain (parseJson (K (true))),
 ])
 
 const useRecipe = ({recipe: propsRecipe}) => {
-	const [recipe, setRecipe] = useState (propsRecipe)
-	const location = useLocation ()
-	useEffect(() => {
-		const searchParams = new URL (document.location).searchParams;
-		console.log('searchParams', searchParams);
-		setRecipe (
-			fromMaybe (propsRecipe) (chain (getRecipeFromUrl) (
-				searchParams ? Nothing : Just (searchParams)
-			))
-		)
-	}, [location, propsRecipe]);
-	return recipe
+	const history = useHistory()
+	const maybeRecipe = getRecipeFromSearch (document.location.search)
+	if (isJust (maybeRecipe)) {
+		return maybeRecipe.value
+	} else {
+		history.push('/404')
+	}
 }
 
 export const RecipeView = props => {

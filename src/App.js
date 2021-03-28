@@ -6,6 +6,7 @@ import { createNoChild } from './util'
 import {
 	prepend,
 	map,
+	pipe,
 } from 'sanctuary'
 import { testRecipes } from './test-recipes'
 import YAML from 'yaml'
@@ -13,6 +14,11 @@ import {
 	Switch, Route, Link, useHistory,
 } from 'react-router-dom'
 const nameRecipe = ({author, name}) => `${author.name}'s ${name}`
+const makeRecipeUrl = pipe([
+	JSON.stringify,
+	encodeURIComponent,
+	s => `/view?recipe=${s}`
+])
 
 const unsafeLast = xs => xs[xs.length - 1]
 const parsers = {
@@ -22,7 +28,7 @@ const parsers = {
 }
 const parseFile = fileType => fileString => parsers[fileType.toLowerCase()] (fileString)
 
-const MainMenu = ({setMode, setRecipe}) => {
+const MainMenu = ({setMode, setRecipe, linkToRecipe}) => {
 	const [selected, setSelected] = useState ()
 	const [fileRecipe, setFileRecipe] = useState ()
 	const allRecipes = fileRecipe ? prepend (fileRecipe) (testRecipes) : testRecipes
@@ -73,7 +79,7 @@ const MainMenu = ({setMode, setRecipe}) => {
 					}
 				</select>
 				<br/>
-				view your selected recipe <Link to='view'>here</Link>.
+				view your selected recipe <Link to={linkToRecipe}>here</Link>.
 				<br/>
 				(this viewer roughly mirrors <a href="https://aramse.coffee/recipe/">aramse's</a> recipe format.)
 			</p>
@@ -99,21 +105,21 @@ const App = () => {
 	console.log('recipe', recipe);
 	const history = useHistory()
 	const handleSetRecipe = r => {
-		setRecipe (r)
-		history.push(`/view?recipe=${JSON.stringify(r)}`)
+		history.push(makeRecipeUrl (r))
 	}
+	const linkToRecipe = makeRecipeUrl (recipe)
   return (
 		<div id='app'>
 			<main>
 				<Switch>
 					<Route path='/view'>
-						{createNoChild (RecipeView) ({recipe, handleSetRecipe, setRecipe})}
+						{createNoChild (RecipeView) ({handleSetRecipe, setRecipe})}
 					</Route>
 					<Route path='/input'>
 						{createNoChild (InputForm) ({recipe, handleSetRecipe, setRecipe})}
 					</Route>
 					<Route path='/'>
-						{createNoChild (MainMenu) ({recipe, handleSetRecipe, setRecipe})}
+						{createNoChild (MainMenu) ({recipe, linkToRecipe, setRecipe})}
 					</Route>
 				</Switch>
 			</main>

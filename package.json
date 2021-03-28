@@ -27,7 +27,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && cp build/index.html build/200.html",
+    "build": "react-scripts build && cp build/index.html build/200.html && echo 'its-dare-et-recipe.surge.sh' > build/CNAME ",
+		"deploy": "pushd build && echo '\n' | surge && popd",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
