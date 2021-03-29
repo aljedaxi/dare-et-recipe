@@ -1,5 +1,5 @@
-import { Fragment, useState, useEffect } from 'react'
-import { createNoChild, createElement } from './util'
+import { Fragment, useState } from 'react'
+import { createNoChild, createElement } from '../util'
 import { 
 	pipe, 
 	stripPrefix,
@@ -32,7 +32,7 @@ import {
 } from '@merc/react-timeline'
 import {
 	useSeconds
-} from './coffeeHooks'
+} from '../coffeeHooks'
 import {
 	useHistory,
 } from 'react-router-dom'

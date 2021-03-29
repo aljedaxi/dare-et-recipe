@@ -19,7 +19,7 @@ import {
 	createElement,
 	createOption ,
 	createNoChild,
-} from './util'
+} from '../util'
 
 const kebab = pipe([ words, joinWith ('-') ])
 const orZero = f => pipe([f, fromMaybe (0)])
