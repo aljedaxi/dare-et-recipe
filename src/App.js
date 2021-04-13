@@ -42,7 +42,11 @@ const App = () => {
 			</main>
 			<hr/>
 			<footer>
-				<a href="mailto:alje@daxi.ml">contact</a>
+				<cite>dare et recipe</cite> open beta 
+				<br />
+				<address>
+					<a href="mailto:alje@daxi.ml">contact</a>
+				</address>
 			</footer>
 		</div>
   )
