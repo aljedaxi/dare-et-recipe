@@ -1,7 +1,6 @@
 import { Fragment, useState } from 'react'
 import { createNoChild, createElement } from '../util'
 import { 
-	keys,
 	zipWith,
 	pipe, 
 	stripPrefix,
@@ -10,21 +9,13 @@ import {
 	chain,
 	prop,
 	K,
-	filter,
-	get,
 	isJust,
-	joinWith,
 	reduce,
-	last,
 	map,
 	append,
-	fromMaybe,
 	toUpper,
 	words,
 	unwords,
-	Nothing,
-	Just,
-	justs,
 	parseJson,
 	values,
 } from 'sanctuary'
@@ -40,7 +31,7 @@ import {
 	useHistory,
 } from 'react-router-dom'
 import {
-	Dialog, DialogOverlay, DialogContent
+	DialogOverlay, DialogContent
 } from '@reach/dialog'
 import '@reach/dialog/styles.css'
 import {
@@ -61,18 +52,17 @@ const formatTime = n =>
 const bold = s => `**${s}**`
 const italic = s => `_${s}_`
 const id = x => x
-const nothingIfUndefined = x => x === undefined ? Nothing : Just (x)
 
 // 0 => timelineRightBound , 
 // you can take that and divide that to find the width of every 5 seconds
 
 // Event[] -> number
-const getTimelineRightBound = pipe([
-	last,
-	map (({endRange, end, start}) => endRange ?? end ?? start),
-	map (n => ((n + 60) - (n % 60))),
-	fromMaybe (0),
-])
+// const getTimelineRightBound = pipe([
+// 	last,
+// 	map (({end, start}) => end ?? start),
+// 	map (n => ((n + 60) - (n % 60))),
+// 	fromMaybe (0),
+// ])
 
 const makeMarkdownText = ({type, quantity, description, runnerUp, inRange}) =>
 	[
@@ -81,26 +71,16 @@ const makeMarkdownText = ({type, quantity, description, runnerUp, inRange}) =>
 		description ? `\n\n${description}` : '',
 	].join('')
 		
-const showEventTiming = ({start, end, endRange}) =>
-	pipe([justs, map (formatTime), joinWith (' => ')]) (
-		[start, end, endRange].map(nothingIfUndefined)
-	)
+const showEventTiming = ({start, end}) => 
+	start === end ? '' : [start, end].map(formatTime).join(' => ')
 
 const EventsView = props => {
 	const {events} = props;
-	const quantities = pipe([
-		filter (pipe ([get (K (true)) ('quantity'), isJust])),
-		reduce (({acc, vals}) => x => 
-			({acc: acc + x.quantity, vals: append ([x.quantity, acc + x.quantity]) (vals)})
-		) ({acc: 0, vals: []}),
-		prop ('vals'),
-		Object.fromEntries,
-	]) (events)
 	return pipe([
-		map (({quantity, ...o}) => ({ 
+		map ((o) => ({ 
 			key: o.description ? o.description : `${o.start}${o.type}`, 
 			date: showEventTiming (o), 
-			text: makeMarkdownText ({quantity: quantities[quantity], ...o}),
+			text: makeMarkdownText (o),
 		})),
 		map (createNoChild (TextEvent)),
 		createElement (Events) (),
@@ -111,8 +91,10 @@ const EventsView = props => {
 const MetadatumView = ({k, v}) => <div>{k}: <b>{v}</b></div>
 const MetadataView = ({author, description, name, brewer, coffee, grind, water, handleChangeCoffee, handleChangeWater, waterTemp,}) => (
 	<Fragment>
+		<div>
+			Recipe: <b> <cite> {name} </cite> </b>
+		</div>
 		{map (createNoChild (MetadatumView)) ([
-			{ key: 'Recipe', k: 'Recipe', v: name },
 			{ key: 'Brewer', k: 'Brewer', v: brewer },
 			{ key: 'Grind',  k: 'Grind',  v: grind },
 		])}
@@ -229,12 +211,12 @@ const startlify = events => pipe([
 	zipWith (x => y => ({...x, ...y})) (events),
 ]) (events)
 const getQd = x => x?.quantityDelta ?? 0
+const getQ = x => x?.quantity ?? 0
 const quantify = events => pipe([
 	reduce (xs => x => {
-		const lastQd = getQd (unsafeLast (xs))
+		const lastQd = getQ (unsafeLast (xs))
 		return append ({quantity: lastQd + getQd (x)}) (xs)
 	}) ([]),
-	trace,
 	zipWith (x => y => ({...x, ...y})) (events),
 ]) (events)
 
@@ -262,34 +244,65 @@ const viewerNames = map (prop ('label')) (values (viewers))
 const viewerOptions = map (
 	s => createElement ('option') ({key: s}) (s)
 ) (viewerNames)
-console.log('viewerOptions', viewerOptions);
 
-const viewersByLabel = Object.fromEntries(
-	map (({label, component}) => [label, component]) (values (viewers))
-)
+// const viewersByLabel = Object.fromEntries(
+// 	map (({label, component}) => [label, component]) (values (viewers))
+// )
 
 export const RecipeView = props => {
 	const recipe = useRecipe (props)
 	const [showChangeViewerDialog, hideChangeViewerDialog, isChangeViewerShowing] = useShowHide ()
+	const [showHelpDialog, hideHelpDialog, isHelpDialogShowing] = useShowHide ()
 	const [selecty, setSelecty] = useState (viewerNames[0])
 	const {multiplyWater, ...handlers} = useMultiplier(recipe);
 	const {start, pause, isRunning, seconds} = useSeconds();
 	const events = doSelectyStuff ({seconds, multiplyWater}) (recipe.events)
 	const EventViewer = YeOldeTimelineView;
+	const z = {zIndex: 9000}
 	return (
 		<Fragment>
 			<button onClick={showChangeViewerDialog}>change viewer</button>
-			<Dialog aria-label="Select a Viewer" isOpen={isChangeViewerShowing} onDismiss={hideChangeViewerDialog}>
-				<div>
-					<label htmlFor="options">viewer options:</label>
-					<select id="options" value={selecty} onChange={e => setSelecty (e.target.value)} >
-						{viewerOptions}
-					</select>
-				</div>
-				<button className="close-button" onClick={hideChangeViewerDialog}>
-					done
-				</button>
-			</Dialog>
+			<button onClick={showHelpDialog}>HELP</button>
+			<DialogOverlay style={z} aria-label="select a viewer" isOpen={isChangeViewerShowing} onDismiss={hideChangeViewerDialog}>
+				<DialogContent>
+					<div>
+						<label htmlFor="options">viewer options:</label>
+						<select id="options" value={selecty} onChange={e => setSelecty (e.target.value)} >
+							{viewerOptions}
+						</select>
+					</div>
+					<button className="close-button" onClick={hideChangeViewerDialog}>
+						done
+					</button>
+				</DialogContent>
+			</DialogOverlay>
+			<DialogOverlay style={z} aria-label='help' isOpen={isHelpDialogShowing} onDismiss={hideHelpDialog} >
+				<DialogContent>
+					<div>
+						<h2>Help</h2>
+						<h3>Metadata</h3>
+						<p>
+							the top is recipe metadata.  if you change the amount of water, the amount of coffee will change to stay in sync with it, but be warned: 
+							<ul>
+								<li>this assumes that all the scale readings in the recipe are a pure function of water</li>
+								<li>
+									the recipe may not be designed for specific water-coffee values
+								</li>
+							</ul>
+						</p>
+						<h3>Recipe Timeline</h3>
+						<ul>
+							<li>the pink bit is the start time =&gt; the end time</li>
+							<li>if the timer is between an event&apos;s start and end time, the type will be <b>bolded</b></li>
+							<li>the next event is <i>italicised</i></li>
+							<li>the gram reading next to the type says what the scale should read at the end of the action</li>
+						</ul>
+					</div>
+					<button className="close-button" onClick={hideHelpDialog}>
+						done
+					</button>
+				</DialogContent>
+			</DialogOverlay>
 			{createNoChild (EventViewer) ({recipe, handlers, seconds, isRunning, pause, start, events})}
 		</Fragment>
 	)
