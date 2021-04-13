@@ -4,16 +4,24 @@ import YAML from 'yaml'
 import { Form, Field } from 'react-final-form'
 import { 
 	keys,
+	chain,
+	mapLeft,
+	justs,
+	fromPairs,
 	parseFloat,
-	parseInt,
 	pipe, 
 	words, 
 	joinWith, 
 	map,
 	range,
 	add,
-	fromMaybe,
+	ifElse,
 	insert,
+	elem,
+	Just,
+	Nothing,
+	Pair,
+	fromMaybe,
 } from 'sanctuary'
 import {
 	createElement,
@@ -21,18 +29,66 @@ import {
 	createNoChild,
 } from '../util'
 
+const isString = s => typeof s === 'string'
+const parseIfString = pipe([
+	ifElse (isString) (parseFloat) (Just),
+	fromMaybe (0),
+])
 const kebab = pipe([ words, joinWith ('-') ])
-const orZero = f => pipe([f, fromMaybe (0)])
-const intOrZero = orZero (parseInt (10))
-const floatOrZero = orZero (parseFloat)
 const succ = add (1)
+const mergeAll = pipe([
+	chain (Object.entries),
+	Object.fromEntries
+])
 
 // multimedia
 // coffee variety /TODO
 // grind size
+const lengthyEvents = [
+	'bloom', 
+	'draw down', 
+	'pour',
+	'press', 
+	'stir', 
+]
+const timelessEvents = [
+	'note', 
+	'distribute', 
+	'invert',
+	'swirl', 
+	'break crust',
+	'stop brew',
+	'cap on',
+	'grind',
+	'start timer',
+]
+const eventTypes = [ ...lengthyEvents, ...timelessEvents ].sort()
+const TIMELESS_ERROR = 'for the sake of these recipes, this event doesn\'t take time. please reset the time to 0.'
+const TIMEFUL_ERROR = 'for the sake of these recipes, this kind of event takes time. please specify how long this\'ll take (and maybe add a "start timer" event before it).'
+const keyMap = f => o => o.map((e, k) => f (e) (k))
+const validateEvents = pipe([
+	keyMap (({type = eventTypes[0], duration = 0}) => (k) => 
+			elem (type) (timelessEvents) && duration > 0 ? Just (Pair (`[${k}]type`) (TIMELESS_ERROR))
+		: elem (type) (lengthyEvents) && duration < 1  ? Just (Pair (`[${k}]type`) (TIMEFUL_ERROR))
+		: Nothing
+	),
+	justs,
+	map (mapLeft (s => `events${s}`)),
+	fromPairs,
+])
+
+const validateAuthor = pipe([
+	({email = ''}) => [
+		email.length && !email.includes('@') 
+			? Just (Pair ('email') ('please enter a valid email'))
+			: Nothing,
+	],
+	justs,
+	fromPairs,
+])
+
 const timeInput = {component: 'input', step: 1, min: 0, type: 'number'}
 const gramsInput = {component: 'input', type: 'number', step: 0.1, min: 0}
-const eventTypes = ['note', 'bloom', 'distribute', 'invert', 'swirl', 'break crust', 'draw down', 'pour', 'stop brew', 'cap on', 'grind', 'press', 'stir'].sort()
 const required = true
 const rawMetadata = [
 	{name: 'author.name', label: 'your name', autoComplete: 'name'},
@@ -53,6 +109,7 @@ const aramseData = [
 // ];
 const textFields = [...rawMetadata, ...aramseData]
 
+
 //TODO assume short
 // type EventInputProps = {idx: number; id: string; headerElement?: string};
 const createOptionWithValueName = t => createOption ({key: t, value: t}) (t)
@@ -64,21 +121,23 @@ const LabelAndField = ({id, label, ...rest}) =>
 
 const eventData = [
 	{
-		label: 'start time',
-		name: 'start',
-		required,
+		label: 'how long is the event?',
+		name: 'duration',
+		required, 
+		defaultValue: 0, 
 		...timeInput,
+		children: ({input, meta}) => (
+			<Fragment>
+				{createNoChild ('input') (input)}
+				{meta.error && meta.touched ? meta.error : null}
+			</Fragment>
+		)
 	},
-	{
-		label: 'end time',
-		name: 'end',
-		...timeInput,
-	},
-	{
-		label: 'range end time', //TODO better semiotics
-		name: 'endRange',
-		...timeInput,
-	},
+	// {
+	// 	label: 'range end time', //TODO better semiotics
+	// 	name: 'endRange',
+	// 	...timeInput,
+	// },
 	{
 		name: 'type',
 		component: 'select',
@@ -87,9 +146,11 @@ const eventData = [
 		children: map (createOptionWithValueName) (eventTypes),
 	},
 	{
-		name: 'quantity',
-		label: 'end quantity',
+		name: 'quantityDelta',
+		label: 'change in scale reading',
+		defaultValue: 0,
 		...gramsInput,
+		min: undefined,
 	}, 
 	{
 		name: 'description',
@@ -108,13 +169,13 @@ const EventInput = ({idx, id, headerElement = 'h3', children, ...rest}) => (
 			])) (eventData)}
 		</div>
 	</div>
-);
-
+)
 
 const objectEncoders = {
 	json: s => JSON.stringify(s),
 	yaml: s => YAML.stringify(s),
-};
+}
+
 const fileType = {
 	json: 'application/json',
 	yaml: 'text/x-yaml',
@@ -138,6 +199,30 @@ const useList = (startingN = 1) => {
 	return [_ => setN (succ), range (1) (succ (n))]
 }
 
+const removeUndefineds = o => 
+	Object.fromEntries ( Object.entries (o).filter(([_, v]) => v !== undefined))
+
+const onSubmit = ({handleSetRecipeFormat, handleSetRecipe}) => ({author, events = [], ...values}) => {
+	const eventize = map (({quantityDelta, duration, ...rest}) => ({
+		quantityDelta: parseIfString (quantityDelta),
+		duration: parseIfString (duration),
+		...rest,
+	}))
+	const {description, name, brewer, coffee, grind, water, format = 'json'} = values
+	const recipe = { 
+		author,
+		events: eventize (events),
+		description,
+		name,
+		brewer,
+		coffee: parseIfString (coffee),
+		grind,
+		water: map (parseIfString) (water), 
+	}
+	const f = format === handleSetRecipeFormat ? handleSetRecipe : doFileStuff (format)
+	f (removeUndefineds (recipe))
+};
+
 export const InputForm = props => {
 	const { handleSetRecipe } = props;
 	const handleSetRecipeFormat = 'don\'t create a file, just show me the recipe';
@@ -145,26 +230,17 @@ export const InputForm = props => {
 	const [handleAddingEvent, eventRange] = useList ()
 	const [handleAddEquip, equipRange] = useList ()
 
-	const onSubmit = ({author, events = [], ...values}) => {
-		const eventize = map (({start, end, type, quantity, ...rest}) => ({
-			start: intOrZero (start),
-			end: intOrZero (end === undefined ? start : end),
-			quantity: floatOrZero (quantity ?? '0'),
-			type: type ?? eventTypes[0],
-			...rest,
-		}))
-		const {description, name, brewer, coffee, grind, water, format = 'json'} = values
-		const recipe = { author, events: eventize (events), description, name, brewer, coffee, grind, water }
-		const f = format === handleSetRecipeFormat ? handleSetRecipe : doFileStuff (format)
-		f (recipe)
-	};
+	const handleSubmit = onSubmit ({handleSetRecipeFormat, handleSetRecipe})
 
 	const columnalStyle = {display: 'grid', gridTemplateColumns: '50% 50%', width: 350};
 	return (
 		<div>
 			<h1>create new recipe</h1>
 			<Form
-				onSubmit={onSubmit}
+				onSubmit={handleSubmit}
+				validate={({events = [], author = {}}) => 
+					mergeAll([ validateEvents (events), validateAuthor (author) ])
+				}
 				render={({handleSubmit}) =>
 					<form onSubmit={handleSubmit}>
 						<h2>metadata</h2>

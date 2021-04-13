@@ -1,4 +1,7 @@
-type EventType = 'note' | 'bloom' | 'distribute' | 'invert' | 'swirl' | 'break crust' | 'draw down' | 'pour' | 'stop brew' | 'cap on' | 'grind' | 'press' | 'stir'
+type LengthyEventType = 'bloom' | 'draw down' | 'pour' | 'press' 
+type TimelessEventType = 'note' | 'distribute' | 'invert' | 'swirl' | 'break crust' | 'stop brew' | 'cap on' | 'grind' | 'start timer' | 'stir'
+
+type EventType = LengthyEventType | TimelessEventType
 
 type Author = {
 	name: string;
@@ -6,14 +9,14 @@ type Author = {
 	email?: string;
 }
 
-type Event = {
-	start: number;
-	type: EventType;
-	end?: number;
-	endRange?: number;
+type EventCommon = {
 	description?: string;
-	quantity?: number;
+	quantityDelta?: number;
 }
+
+type LengthyEvent = { duration: number; type: LengthyEventType; } & EventCommon;
+
+type TimelessEvent = { type: TimelessEventType; } & EventCommon;
 
 type Recipe = {
 	author: Author;
@@ -27,7 +30,7 @@ type Recipe = {
 		grams: number;
 		temp: number;
 	};
-	events: Event[];
+	events: Array<LengthyEvent | TimelessEvent>
 }
 
 const eldric: Recipe = {
@@ -48,17 +51,17 @@ const eldric: Recipe = {
 		grams: 60 + 100 + 70 + 50,
 	},
 	events: [
-		{ start: 0, type: 'note', description: 'this recipe has steps without clear times. everything just sort of takes as long as it takes.' },
-		{ start: 0, type: 'note', description: 'start with the smaller vessel.' },
-		{ start: 0, type: 'bloom', quantity: 60, },
-		{ start: 1, type: 'stir', description: 'gently agitate with back of spoon; bring coffee from edge into middle.'},
-		{ start: 2, type: 'draw down'},
-		{ start: 3, type: 'note', description: 'swap out the vesels.' },
-		{ start: 4, type: 'pour', quantity: 100 },
-		{ start: 5, type: 'break crust', description: 'scoop off foam' },
-		{ start: 6, type: 'pour', quantity: 70 },
-		{ start: 7, type: 'pour', quantity: 50, description: 'add bypass to the larger vessel, to taste.' },
-		{ start: 8, type: 'note', quantity: 5.5, description: 'add liquid from the smaller vessel into the larger vessel, to taste.' },
+		{ type: 'note', description: 'this recipe has steps without clear times. everything just sort of takes as long as it takes.' },
+		{ type: 'note', description: 'start with the smaller vessel.' },
+		{ duration: 0, type: 'bloom', quantityDelta: 60, },
+		{ type: 'stir', description: 'gently agitate with back of spoon; bring coffee from edge into middle.'},
+		{ duration: 0, type: 'draw down'},
+		{ type: 'note', description: 'swap out the vesels.', quantityDelta: -60 },
+		{ duration: 0, type: 'pour', quantityDelta: 100 },
+		{ type: 'break crust', description: 'scoop off foam' },
+		{ duration: 0, type: 'pour', quantityDelta: 70 },
+		{ duration: 0, type: 'pour', quantityDelta: 50, description: 'add bypass to the larger vessel, to taste.' },
+		{ type: 'note', quantityDelta: 5.5, description: 'add liquid from the smaller vessel into the larger vessel, to taste.' },
 	]
 }
 
@@ -78,10 +81,10 @@ const ultimateFrenchPress: Recipe = {
 		grams: 500,
 	},
 	events: [
-		{ start: 0, type: 'pour', quantity: 500, },
-		{ start: 4 * 60, type: 'break crust', description: 'scoop that foam out'},
-		{ start: (4 + 5) * 60, type: 'press', description: 'press only to the surface of the liquid'},
-		{ start: (4 + 5) * 60, type: 'note', description: 'the longer you wait, the bigger the taste, but you can pour whenever you\'re ready.' }
+		{ duration: 4 * 60, type: 'pour', quantityDelta: 500, },
+		{ type: 'break crust', description: 'scoop that foam out'},
+		{ duration: 5 * 60, type: 'press', description: 'press only to the surface of the liquid'},
+		{ type: 'note', description: 'the longer you wait, the bigger the taste, but you can pour whenever you\'re ready.' }
 	]
 }
 
@@ -101,13 +104,14 @@ const ultimateV60: Recipe = {
 		grams: 500,
 	},
 	events: [
-		{ start: 0, end: 10, type: 'bloom', quantity: 60, },
-		{ start: 10, type: 'swirl', },
-		{ start: 45, end: 75, type: 'pour', quantity: 240, },
-		{ start: 75, end: 105, type: 'pour', quantity: 500 - 240 - 60, },
-		{ start: 105, type: 'stir', description: 'Gently stir the water surface along the inner wall of the v60, to knock down grounds. Do not touch the coffee bed.' },
-		{ start: 120, type: 'swirl', },
-		{ start: 120, end: 120 + 45, endRange: (60 * 3) + 15, type: 'draw down', },
+		{ duration: 0, type: 'pour', quantityDelta: 60 },
+		{ type: 'swirl', },
+		{ duration: 45, type: 'bloom' },
+		{ duration: 30, type: 'pour', quantityDelta: 240 },
+		{ duration: 30, type: 'pour', quantityDelta: 200 },
+		{ type: 'stir', description: 'Gently stir the water surface along the inner wall of the v60, to knock down grounds. Do not touch the coffee bed.' },
+		{ type: 'swirl' },
+		{ duration: (2 * 60) - 15, type: 'draw down' },
 	]
 }
 
