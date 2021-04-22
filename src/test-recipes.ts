@@ -1,5 +1,8 @@
-type LengthyEventType = 'bloom' | 'draw down' | 'pour' | 'press' 
-type TimelessEventType = 'note' | 'distribute' | 'invert' | 'swirl' | 'break crust' | 'stop brew' | 'cap on' | 'grind' | 'start timer' | 'stir'
+import { mult, } from 'sanctuary'
+
+type LengthyEventType = 'bloom' | 'draw down' | 'pour'  | 'wait'
+type TimelessEventType = 'note' | 'distribute' | 'invert' | 'swirl' | 'break crust' | 'stop brew' | 'cap on' | 'grind' | 'start timer' | 'stir' | 'create vacuum with plunger' | 'press'
+
 
 type EventType = LengthyEventType | TimelessEventType
 
@@ -16,7 +19,7 @@ type EventCommon = {
 
 type LengthyEvent = { duration: number; type: LengthyEventType; } & EventCommon;
 
-type TimelessEvent = { type: TimelessEventType; } & EventCommon;
+type TimelessEvent = { duration?: number; type: TimelessEventType; } & EventCommon;
 
 type Recipe = {
 	author: Author;
@@ -32,6 +35,34 @@ type Recipe = {
 	};
 	events: Array<LengthyEvent | TimelessEvent>
 }
+
+// multimedia
+// coffee variety /TODO
+// grind size
+export const lengthyEvents: LengthyEventType[] = [
+	'bloom',
+	'draw down',
+	'pour',
+    'wait'
+]
+export const timelessEvents: TimelessEventType[] = [
+	'note',
+	'press',
+	'stir',
+	'distribute',
+	'invert',
+	'swirl',
+	'break crust',
+	'stop brew',
+	'cap on',
+	'grind',
+	'start timer',
+]
+export const eventTypes: EventType[] = [ ...lengthyEvents, ...timelessEvents ].sort()
+let hoffmann = {
+	name: 'james hoffmann',
+	url: 'jameshoffmann.co.uk',
+};
 
 const eldric: Recipe = {
 	author: {
@@ -66,11 +97,7 @@ const eldric: Recipe = {
 }
 
 const ultimateFrenchPress: Recipe = {
-	author: {
-		name: 'james hoffmann',
-		email: 'please-dont@harass.james',
-		url: 'jameshoffmann.co.uk',
-	},
+	author: hoffmann,
 	description: 'the ultimate french press technique',
 	name: 'ultimate french press technique',
 	brewer: 'french press',
@@ -89,11 +116,7 @@ const ultimateFrenchPress: Recipe = {
 }
 
 const ultimateV60: Recipe = {
-	author: {
-		name: 'james hoffmann',
-		email: 'please-dont@harass.james',
-		url: 'jameshoffmann.co.uk',
-	},
+	author: hoffmann,
 	description: 'the ultimate v60 technique',
 	name: 'ultimate v60 technique',
 	brewer: 'v60',
@@ -115,4 +138,28 @@ const ultimateV60: Recipe = {
 	]
 }
 
-export const testRecipes = [ultimateV60, ultimateFrenchPress, eldric];
+
+const minutes = mult (60)
+const ultimateAeropress: Recipe = {
+	author: hoffmann,
+	description: 'the ultimate aeropress technique',
+	name: 'ultimate aeropress technique',
+	brewer: 'aeropress',
+	coffee: 11,
+	grind: 'Fine',
+	water: {
+		temp: 100,
+		grams: 200,
+	},
+	events: [
+		{ duration: 0, type: 'pour', quantityDelta: 200 },
+		{ type: 'start timer' },
+		{ type: 'create vacuum with plunger' },
+		{ type: 'wait', duration: minutes(2) },
+		{ type: 'swirl', description: 'hold both the brewer and the plunger' },
+		{ type: 'wait', duration: 30 },
+		{ type: 'press' }
+	]
+}
+
+export const testRecipes = [ultimateV60, ultimateFrenchPress, eldric, ultimateAeropress];

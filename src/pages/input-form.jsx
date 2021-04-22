@@ -28,6 +28,9 @@ import {
 	createOption ,
 	createNoChild,
 } from '../util'
+import {
+	eventTypes, timelessEvents, lengthyEvents
+} from '../test-recipes'
 
 const isString = s => typeof s === 'string'
 const parseIfString = pipe([
@@ -41,28 +44,6 @@ const mergeAll = pipe([
 	Object.fromEntries
 ])
 
-// multimedia
-// coffee variety /TODO
-// grind size
-const lengthyEvents = [
-	'bloom', 
-	'draw down', 
-	'pour',
-	'press', 
-	'stir', 
-]
-const timelessEvents = [
-	'note', 
-	'distribute', 
-	'invert',
-	'swirl', 
-	'break crust',
-	'stop brew',
-	'cap on',
-	'grind',
-	'start timer',
-]
-const eventTypes = [ ...lengthyEvents, ...timelessEvents ].sort()
 const TIMELESS_ERROR = 'for the sake of these recipes, this event doesn\'t take time. please reset the time to 0.'
 const TIMEFUL_ERROR = 'for the sake of these recipes, this kind of event takes time. please specify how long this\'ll take (and maybe add a "start timer" event before it).'
 const keyMap = f => o => o.map((e, k) => f (e) (k))
