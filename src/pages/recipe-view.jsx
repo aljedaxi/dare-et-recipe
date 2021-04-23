@@ -179,27 +179,34 @@ const useRecipe = ({recipe: propsRecipe}) => {
 	}
 }
 
-export const YeOldeTimelineView = ({recipe, handlers, seconds, isRunning, pause, start, events, children}) => {
-	return (
-		<div style={{width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-			<div>
-				{createNoChild (MetadataView) ({...recipe, ...handlers, waterTemp: recipe.water.temp })}
-			</div>
-			<div style={{marginTop: 10}} />
-			<div>
-				{seconds}s
-			</div>
-			<div>
-				<button onClick={isRunning ? pause : start}>
-					{isRunning ? 'pause' : 'start'}
-				</button>
-			</div>
-			<div style={{marginTop: 10}} />
-			<div>
-				{createNoChild (EventsView) ({events})}
-			</div>
-		</div>
-	)
+const div = createElement ('div')
+const divNc = createNoChild ('div')
+export const YeOldeTimelineView = ({recipe, handlers, seconds, isRunning, pause, start, events}) => {
+	const waterTemp = recipe.water.temp
+	const style = {width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center'}
+
+	const children = [
+		{
+			key: 'metadata', 
+			children: createNoChild (MetadataView) ({...recipe, ...handlers, waterTemp})
+		},
+		{
+			key: 'clock', 
+			style: {marginTop: 10}, 
+			children: formatTime (seconds)
+		},
+		{
+			key: 'button', 
+			style: {marginBottom: 10},
+			children: createElement ('button') ({ onClick: isRunning ? pause : start }) (isRunning ? 'pause' : 'start')
+		},
+		{
+			key: 'timeline',
+			children: createNoChild (EventsView) ({events})
+		}
+	]
+
+	return div ({style}) (map (divNc) (children))
 }
 
 const unsafeLast = xs => xs[xs.length - 1]
