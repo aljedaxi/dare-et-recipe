@@ -153,9 +153,10 @@ const EventInput = ({idx, id, headerElement = 'h3', children, ...rest}) => (
 )
 
 const objectEncoders = {
-	json: s => JSON.stringify(s),
 	yaml: s => YAML.stringify(s),
+	json: s => JSON.stringify(s),
 }
+const getObjectEncoders = format => objectEncoders[format] ?? objectEncoders.yaml
 
 const fileType = {
 	json: 'application/json',
@@ -164,7 +165,7 @@ const fileType = {
 
 const doFileStuff = format => recipe => {
 	const {name} = recipe
-	const fileData = objectEncoders[format] (recipe)
+	const fileData = getObjectEncoders(format) (recipe)
 	const type = fileType[format]
 	const fileName = `${name}.${format}`
 	const file = new File([fileData], fileName, {type})
@@ -182,17 +183,16 @@ const useList = (startingN = 1) => {
 
 const removeUndefineds = o => 
 	Object.fromEntries ( Object.entries (o).filter(([_, v]) => v !== undefined))
-
-const onSubmit = ({handleSetRecipeFormat, handleSetRecipe}) => ({author, events = [], ...values}) => {
-	const eventize = map (({quantityDelta, duration, ...rest}) => ({
-		quantityDelta: parseIfString (quantityDelta),
-		duration: parseIfString (duration),
-		...rest,
-	}))
-	const {description, name, brewer, coffee, grind, water, format = 'json'} = values
-	const recipe = { 
+const parseEvent = ({quantityDelta, duration, ...rest}) => ({
+	quantityDelta: parseIfString (quantityDelta),
+	duration: parseIfString (duration),
+	...rest,
+})
+const parseRecipe = values => {
+	const {description, name, brewer, coffee, grind, water, author, events = []} = values
+	return { 
 		author,
-		events: eventize (events),
+		events: map (parseEvent) (events),
 		description,
 		name,
 		brewer,
@@ -200,10 +200,16 @@ const onSubmit = ({handleSetRecipeFormat, handleSetRecipe}) => ({author, events 
 		grind,
 		water: map (parseIfString) (water), 
 	}
+};
+
+
+const onSubmit = ({handleSetRecipeFormat, handleSetRecipe}) => ({format = 'yaml', ...rest}) => {
+	const recipe = parseRecipe (rest)
 	const f = format === handleSetRecipeFormat ? handleSetRecipe : doFileStuff (format)
 	f (removeUndefineds (recipe))
 };
 
+const trace = s => {console.log(s); return s;};
 export const InputForm = props => {
 	const { handleSetRecipe } = props;
 	const handleSetRecipeFormat = 'don\'t create a file, just show me the recipe';
@@ -220,7 +226,12 @@ export const InputForm = props => {
 			<Form
 				onSubmit={handleSubmit}
 				validate={({events = [], author = {}}) => 
-					mergeAll([ validateEvents (events), validateAuthor (author) ])
+					trace(
+						mergeAll([ 
+							// validateEvents (events), 
+							validateAuthor (author) 
+						])
+					)
 				}
 				render={({handleSubmit}) =>
 					<form onSubmit={handleSubmit}>
@@ -255,7 +266,6 @@ export const InputForm = props => {
 								id: 'format',
 								component: 'select',
 								label: 'export format',
-								children: map (createOptionWithValueName) (eventTypes),
 							}) (map (createOptionWithValueName) (keys (outputters)))}
 						</div>
 						<button type='submit'>submit</button>
