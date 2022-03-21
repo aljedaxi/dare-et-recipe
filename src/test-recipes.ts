@@ -87,11 +87,12 @@ const eldric: Recipe = {
 		{ duration: 0, type: 'bloom', quantityDelta: 60, },
 		{ type: 'stir', description: 'gently agitate with back of spoon; bring coffee from edge into middle.'},
 		{ duration: 0, type: 'draw down'},
-		{ type: 'note', description: 'swap out the vesels.', quantityDelta: -60 },
+		{ type: 'note', description: 'swap out the vesels; clear your scale.', quantityDelta: -60 },
 		{ duration: 0, type: 'pour', quantityDelta: 100 },
 		{ type: 'break crust', description: 'scoop off foam' },
 		{ duration: 0, type: 'pour', quantityDelta: 70 },
-		{ duration: 0, type: 'pour', quantityDelta: 50, description: 'add bypass to the larger vessel, to taste.' },
+		{ duration: 0, type: 'pour', quantityDelta: 50 },
+		{ type: 'note', quantityDelta: 5.5, description: 'add bypass to the larger vessel, to taste.' },
 		{ type: 'note', quantityDelta: 5.5, description: 'add liquid from the smaller vessel into the larger vessel, to taste.' },
 	]
 }
@@ -137,7 +138,6 @@ const ultimateV60: Recipe = {
 		{ duration: (2 * 60) - 15, type: 'draw down' },
 	]
 }
-
 
 const minutes = mult (60)
 const ultimateAeropress: Recipe = {
